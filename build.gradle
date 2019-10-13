@@ -65,3 +65,9 @@ dependencies {
 jar {
     from configurations.embed.collect { it.isDirectory() ? it : zipTree(it) }
 }
+repositories {
+    maven { url 'https://jitpack.io' }
+}
+dependencies {
+    compileOnly "com.github.MilkBowl:VaultAPI:1.7"
+}

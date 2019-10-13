@@ -1,6 +1,5 @@
 package red.man10.man10itemcloud
 
-import org.apache.commons.lang.mutable.Mutable
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -68,15 +67,17 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
         when(member){
             "beginner" ->{
-                insertData(player,1)
+                for (i in 1..pl.inv.small){
+                    insertData(player,i)
+                }
             }
             "expert" -> {
-                for (i in 1..5){
+                for (i in 1..pl.inv.normal){
                     insertData(player,i)
                 }
             }
             "premium" ->{
-                for (i in 1..10){
+                for (i in 1..pl.inv.big){
                     insertData(player,i)
                 }
             }

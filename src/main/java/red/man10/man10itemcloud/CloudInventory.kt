@@ -1,5 +1,6 @@
 package red.man10.man10itemcloud
 
+import net.milkbowl.vault.economy.Economy
 import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
@@ -12,6 +13,10 @@ import org.bukkit.inventory.ItemStack
 
 class CloudInventory(val pl:Man10ItemCloud):Listener{
 
+    val small = 1
+    val normal = 5
+    val big = 10
+
 
     fun openMenu(player: Player){
         val inv = Bukkit.createInventory(null , 27,pl.prefix+"§d§lMenu")
@@ -21,7 +26,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         inv.setItem(13,QIC(Material.PAPER,"§f§lCreate mCloud",0,
                 mutableListOf("新規でmCloudを登録します","§4§l一度登録すると、削除しない限り、変えることは出来ません!")))
         inv.setItem(15,QIC(Material.BARRIER,"§f§lDelete mCloud",0,
-                mutableListOf("mCloudを削除します","§4§lクラウドタイプを変更する場合以外では仕様非推奨です！")))
+                mutableListOf("mCloudを削除します","§4§lクラウドプランを変更する場合以外では仕様非推奨です！")))
 
 
         player.openInventory(inv)
@@ -82,9 +87,9 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
         val inv = Bukkit.createInventory(null,27,"${pl.prefix}§e§lクラウドタイプを選択")
 
-        inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48, mutableListOf("§e§l1ラージチェスト","エンダーチェストでは物足りない方におすすめです")))
-        inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0, mutableListOf("§e§l5ラージチェスト","家の収納をmCloudで済ませたい方におすすめです")))
-        inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0, mutableListOf("§e§l10ラージチェスト","膨大なアイテムを持っている方におすすめです")))
+        inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48, mutableListOf("§e§l${small}ラージチェスト","エンダーチェストでは物足りない方におすすめです")))
+        inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0, mutableListOf("§e§l5${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです")))
+        inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0, mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです")))
         player.openInventory(inv)
     }
 
