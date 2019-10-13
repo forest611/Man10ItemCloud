@@ -1,0 +1,6 @@
+name: Man10ItemCloud
+version: 1.0
+main: red.man10.man10itemcloud.Man10ItemCloud
+commands:
+  mcloud:
+    default: op
