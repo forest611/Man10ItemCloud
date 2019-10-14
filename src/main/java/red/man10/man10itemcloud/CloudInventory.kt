@@ -17,6 +17,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
     val normal = 5
     val big = 10
 
+    val vault = VaultManager(pl)
 
     fun openMenu(player: Player){
         val inv = Bukkit.createInventory(null , 27,pl.prefix+"§d§lMenu")
@@ -24,9 +25,9 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         inv.setItem(11,QIC(Material.CHEST,"§f§lOpen mCloud",0, mutableListOf("mCloudを開きます")))
 
         inv.setItem(13,QIC(Material.PAPER,"§f§lCreate mCloud",0,
-                mutableListOf("新規でmCloudを登録します","§4§l一度登録すると、削除しない限り、変えることは出来ません!")))
+                mutableListOf("新規でmCloudを登録します","§4§l一度登録すると削除しない限り","§4§l変えることは出来ません!")))
         inv.setItem(15,QIC(Material.BARRIER,"§f§lDelete mCloud",0,
-                mutableListOf("mCloudを削除します","§4§lクラウドプランを変更する場合以外では仕様非推奨です！")))
+                mutableListOf("mCloudを削除します","§4§lクラウドプランを変更する場合","§4§l以外では仕様非推奨です！")))
 
 
         player.openInventory(inv)
@@ -87,9 +88,12 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
         val inv = Bukkit.createInventory(null,27,"${pl.prefix}§e§lクラウドタイプを選択")
 
-        inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48, mutableListOf("§e§l${small}ラージチェスト","エンダーチェストでは物足りない方におすすめです")))
-        inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0, mutableListOf("§e§l5${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです")))
-        inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0, mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです")))
+        inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48,
+                mutableListOf("§e§l${small}ラージチェスト","エンダーチェストでは物足りない方におすすめです","§e§l￥500,000,000")))
+        inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0,
+                mutableListOf("§e§l${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです","§e§l￥2,500,000,000")))
+        inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0,
+                mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです","§e§l￥5,000,000,000")))
         player.openInventory(inv)
     }
 
@@ -173,8 +177,17 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
             when(e.slot){
 
-
                 11 ->{
+
+                    //500,000,000
+                    if (vault.getBalance(p.uniqueId)<500000000.0){
+                        p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
+                        return
+                    }
+
+                    vault.withdraw(p.uniqueId,500000000.0)
+                    Bukkit.getLogger().info("withdraw mCloud")
+
                     p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
                     Thread(Runnable {
                         pl.db.createNewData(p,"beginner")
@@ -184,6 +197,17 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 }
 
                 13->{
+
+                    //2,500,000,000
+                    if (vault.getBalance(p.uniqueId)<2500000000.0){
+                        p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
+                        return
+                    }
+
+                    vault.withdraw(p.uniqueId,2500000000.0)
+                    Bukkit.getLogger().info("withdraw mCloud")
+
+
                     p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
                     Thread(Runnable {
                         pl.db.createNewData(p,"expert")
@@ -193,6 +217,17 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 }
 
                 15->{
+
+                    //5,000,000,000
+                    if (vault.getBalance(p.uniqueId)<5000000000.0){
+                        p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
+                        return
+                    }
+
+                    vault.withdraw(p.uniqueId,5000000000.0)
+                    Bukkit.getLogger().info("withdraw mCloud")
+
+
                     p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
                     Thread(Runnable {
                         pl.db.createNewData(p,"premium")
