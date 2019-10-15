@@ -13,12 +13,14 @@ import org.bukkit.inventory.ItemStack
 
 class CloudInventory(val pl:Man10ItemCloud):Listener{
 
+
     val small = 1
     val normal = 5
     val big = 10
 
-    val vault = VaultManager(pl)
-
+    //////////////////////
+    //最初のメニュー
+    //////////////////////
     fun openMenu(player: Player){
         val inv = Bukkit.createInventory(null , 27,pl.prefix+"§d§lMenu")
 
@@ -41,19 +43,21 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         val inv = Bukkit.createInventory(null,54,pl.prefix+"§b§lCloud")
 
         Bukkit.getScheduler().runTask(pl){
-            val map = pl.db.loadItemData(player)
 
-            if (map.isEmpty() || map[page]== null){
-                Bukkit.getLogger().info("no cloud data")
+            val member = pl.db.getMemberType(player)
+
+            if (member == "none"){
+                player.sendMessage(pl.prefix+"§e§lあなたはmCloudを登録していません！")
+                player.closeInventory()
                 return@runTask
             }
+            val map = pl.db.loadItemData(player,page)
 
-            for (item in map[page]!!){
+            for (item in map){
 
                 if (item.type == Material.AIR)continue
 
                 inv.addItem(item)
-
             }
 
             for (i in 45..53){
@@ -66,8 +70,26 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 inv.setItem(45,QIC(Material.PAPER,"§6§l前のページへ",0, mutableListOf("前のページへ戻ります")))
             }
 
-            if (page != map.size){
-                inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+            ///////
+            //next page
+            when(member){
+                "beginner" ->{
+                    if (page != small){
+                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+                    }
+
+                }
+                "expert" ->{
+                    if (page != normal){
+                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+                    }
+
+                }
+                "premium" ->{
+                    if (page != big){
+                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+                    }
+                }
             }
 
             player.openInventory(inv)
@@ -180,12 +202,12 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 11 ->{
 
                     //500,000,000
-                    if (vault.getBalance(p.uniqueId)<500000000.0){
+                    if (pl.vault!!.getBalance(p.uniqueId)<500000000.0){
                         p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
                         return
                     }
 
-                    vault.withdraw(p.uniqueId,500000000.0)
+                    pl.vault!!.withdraw(p.uniqueId,500000000.0)
                     Bukkit.getLogger().info("withdraw mCloud")
 
                     p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
@@ -199,12 +221,12 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 13->{
 
                     //2,500,000,000
-                    if (vault.getBalance(p.uniqueId)<2500000000.0){
+                    if (pl.vault!!.getBalance(p.uniqueId)<2500000000.0){
                         p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
                         return
                     }
 
-                    vault.withdraw(p.uniqueId,2500000000.0)
+                    pl.vault!!.withdraw(p.uniqueId,2500000000.0)
                     Bukkit.getLogger().info("withdraw mCloud")
 
 
@@ -219,12 +241,12 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 15->{
 
                     //5,000,000,000
-                    if (vault.getBalance(p.uniqueId)<5000000000.0){
+                    if (pl.vault!!.getBalance(p.uniqueId)<5000000000.0){
                         p.sendMessage(pl.prefix+"§e§l所持金が足りません！")
                         return
                     }
 
-                    vault.withdraw(p.uniqueId,5000000000.0)
+                    pl.vault!!.withdraw(p.uniqueId,5000000000.0)
                     Bukkit.getLogger().info("withdraw mCloud")
 
 

@@ -32,33 +32,30 @@ class CloudDataBase(val pl:Man10ItemCloud){
         mysql.execute("UPDATE `item_data` SET `base64`='${itemStackArrayToBase64(items.toTypedArray())}'" +
                 " WHERE `page`=$page and uuid='${player.uniqueId}';")
 
-
-        Bukkit.getLogger().info("player:${player.name},page:$page save cloud data.")
     }
 
 
     /**
-     * @return inventory data <page(int),mutableList(ItemStack)
+     * @return inventory data mutableList(ItemStack)
      */
-    fun loadItemData(player: Player):ConcurrentHashMap<Int,MutableList<ItemStack>>{
+    fun loadItemData(player: Player,page : Int):MutableList<ItemStack>{
 
         val mysql = MySQLManagerV2(pl,"mcloud")
 
-        val q = mysql.query("SELECT * FROM item_data WHERE uuid='${player.uniqueId}';")
+        val q = mysql.query("SELECT * FROM item_data WHERE uuid='${player.uniqueId}' and page='$page';")
 
         val rs = q.rs
 
-        val map = ConcurrentHashMap<Int,MutableList<ItemStack>>()
+        rs.next()
 
-        while (rs.next()){
-            map[rs.getInt("page")] = itemStackArrayFromBase64(rs.getString("base64"))
-        }
+        val map = itemStackArrayFromBase64(rs.getString("base64"))
 
         rs.close()
         q.close()
 
         return map
     }
+
 
     ////////////////////////////////
     //新規プレイヤー
@@ -87,12 +84,6 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
     }
 
-    fun deleteData(player: Player){
-        val mysql = MySQLManagerV2(pl,"mcloud")
-
-        mysql.execute("DELETE FROM `item_data` WHERE  `uuid`='${player.uniqueId}';")
-        mysql.execute("DELETE FROM `member_list` WHERE `uuid`='${player.uniqueId}';")
-    }
 
     ////////////////////////////
     //指定ページのデータを新規作成
@@ -111,6 +102,15 @@ class CloudDataBase(val pl:Man10ItemCloud){
                 " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page');")
 
     }
+
+
+    fun deleteData(player: Player){
+        val mysql = MySQLManagerV2(pl,"mcloud")
+
+        mysql.execute("DELETE FROM `item_data` WHERE `uuid`='${player.uniqueId}';")
+        mysql.execute("DELETE FROM `member_list` WHERE `uuid`='${player.uniqueId}';")
+    }
+
 
     /////////////////////////////
     //beginner
