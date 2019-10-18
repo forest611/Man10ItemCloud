@@ -1,6 +1,5 @@
 package red.man10.man10itemcloud
 
-import org.bukkit.Bukkit
 import org.bukkit.Material
 import org.bukkit.entity.Player
 import org.bukkit.inventory.Inventory
@@ -15,16 +14,37 @@ import java.util.concurrent.ConcurrentHashMap
 
 class CloudDataBase(val pl:Man10ItemCloud){
 
+    val members = ConcurrentHashMap<Player,String>()
+
+    fun getMember(player: Player):String{
+        var m = members[player]
+        if(m == null){
+            m = getMemberType(player)
+            members[player] = m
+        }
+        return m
+    }
 
     fun saveItemData(inv : Inventory,page:Int,player:Player){
 
         val items = mutableListOf<ItemStack>()
-        for (i in 0..44){
-            if(inv.getItem(i) == null){
-                items.add(ItemStack(Material.AIR))
-                continue
+        if (getMember(player) == "guest"){
+            for (i in 0..7){
+                if(inv.getItem(i) == null){
+                    items.add(ItemStack(Material.AIR))
+                    continue
+                }
+                items.add(inv.getItem(i))
             }
-            items.add(inv.getItem(i))
+
+        }else{
+            for (i in 0..44){
+                if(inv.getItem(i) == null){
+                    items.add(ItemStack(Material.AIR))
+                    continue
+                }
+                items.add(inv.getItem(i))
+            }
         }
 
         val mysql = MySQLManagerV2(pl,"mcloud")
@@ -98,9 +118,25 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
         val mysql = MySQLManagerV2(pl,"mcloud")
 
+//        mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
+//                " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page');")
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
-                " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page');")
+                "SELECT * FROM (SELECT '${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page')" +
+                " AS TMP WHERE NOT EXISTS (SELECT * FROM `item_data` WHERE uuid='${player.uniqueId}' and page='$page');")
+    }
 
+    fun createGuestData(player: Player){
+        val items = mutableListOf<ItemStack>()
+
+        for (i in 0..7){
+            items.add(ItemStack(Material.AIR))
+        }
+
+        val mysql = MySQLManagerV2(pl,"mcloud")
+
+        mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
+                " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '1');")
+        setMemberType(player, "guest")
     }
 
 
@@ -141,8 +177,14 @@ class CloudDataBase(val pl:Man10ItemCloud){
     fun setMemberType(player:Player,member: String){
         val mysql = MySQLManagerV2(pl,"mcloud")
 
+        if (getMember(player) != "none"){
+            mysql.execute("UPDATE `member_list` SET type='$member',join_date=now() WHERE uuid='${player.uniqueId}';")
+            members[player] = member
+            return
+        }
         mysql.execute("INSERT INTO `member_list` (`player`, `uuid`, `type`, `join_date`)" +
                 " VALUES ('${player.name}', '${player.uniqueId}', '$member', now());")
+        members[player] = member
     }
 
 

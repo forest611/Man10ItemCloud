@@ -33,7 +33,7 @@ class Man10ItemCloud : JavaPlugin() {
             return false
         }
 
-        if (args == null || args.isEmpty()){
+        if (args!= null && args.isEmpty()){
             inv.openMenu(sender)
             return true
         }
