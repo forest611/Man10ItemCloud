@@ -39,22 +39,25 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
     ///////////////////////////
     //指定ページのクラウドデータを開く
+    //user=クラウドユーザー
+    //p=開く人
     /////////////////////////////
-    fun openCloud(player: Player,page:Int){
+    fun openCloud(user: Player,p:Player, page:Int){
         val inv = Bukkit.createInventory(null,54,pl.prefix+"§b§lCloud")
 
         Bukkit.getScheduler().runTask(pl){
 
-            val member = pl.db.getMember(player)
+            val member = pl.db.getMember(user)
 
             if (member == "none"){
-                player.sendMessage(pl.prefix+"§e§l現在新規データを作成しています")
-                pl.db.createGuestData(player)
-                player.sendMessage(pl.prefix+"§e§l作成完了！")
+                user.sendMessage(pl.prefix+"§e§l現在新規データを作成しています")
+                pl.db.createGuestData(user)
+                user.sendMessage(pl.prefix+"§e§l作成完了！")
+                user.sendMessage(pl.prefix+"§e§lもう一度開いてください！")
                 return@runTask
             }
 
-            val map = pl.db.loadItemData(player,page)
+            val map = pl.db.loadItemData(user,page)
 
             if (member == "guest"){
                 val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
@@ -66,7 +69,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 }
                 invGuest.setItem(8,QIC(Material.PAPER,"§e§l有料版にアップグレードする",0,
                         mutableListOf("ここをクリックして有料版に","アップグレードしましょう！")))
-                player.openInventory(invGuest)
+                p.openInventory(invGuest)
                 return@runTask
             }
 
@@ -109,11 +112,12 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
                 }
             }
 
-            player.sendMessage(pl.prefix+"§e§lアイテムを持ったままページを切り替え内容に注意してください！" +
+            user.sendMessage(pl.prefix+"§e§lアイテムを持ったままページを切り替え内容に注意してください！" +
                     "アイテムを落としてしまいます！")
-            player.openInventory(inv)
+            p.openInventory(inv)
         }
     }
+
 
 
     /////////////////////////
@@ -167,28 +171,28 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         player.openInventory(inv)
     }
 
-    /////////////////////
-    //削除確認
-    ///////////////////////
-    fun deleteCheck(player: Player){
-
-        if (pl.db.getMember(player) == "none"){
-            player.closeInventory()
-            player.sendMessage("${pl.prefix}§e§lあなたはmCloudの登録をしていません！")
-            return
-        }
-
-
-        val inv = Bukkit.createInventory(null,9,"${pl.prefix}§4§lmCloud登録削除")
-
-        for (i in 0..3){
-            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§a§l削除する",5, mutableListOf()))
-        }
-        for (i in 5..8){
-            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§4§l削除しない",14, mutableListOf()))
-        }
-        player.openInventory(inv)
-    }
+//    /////////////////////
+//    //削除確認
+//    ///////////////////////
+//    fun deleteCheck(player: Player){
+//
+//        if (pl.db.getMember(player) == "none"){
+//            player.closeInventory()
+//            player.sendMessage("${pl.prefix}§e§lあなたはmCloudの登録をしていません！")
+//            return
+//        }
+//
+//
+//        val inv = Bukkit.createInventory(null,9,"${pl.prefix}§4§lmCloud登録削除")
+//
+//        for (i in 0..3){
+//            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§a§l削除する",5, mutableListOf()))
+//        }
+//        for (i in 5..8){
+//            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§4§l削除しない",14, mutableListOf()))
+//        }
+//        player.openInventory(inv)
+//    }
 
     @EventHandler
     fun clickEvent(e:InventoryClickEvent){
@@ -202,7 +206,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
             when(e.slot){
                 11 ->{
-                    openCloud(p,1)
+                    openCloud(p,p,1)
                 }
                 13 ->{
                     upgradeCloud(p)
@@ -225,7 +229,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         Thread(Runnable {pl.db.saveItemData(e.inventory,page,p)}).start()
 
-                        openCloud(p,page-1)
+                        openCloud(p,p,page-1)
                     }
                 }
                 53 ->{
@@ -235,7 +239,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         Thread(Runnable {pl.db.saveItemData(e.inventory,page,p)}).start()
 
-                        openCloud(p,page+1)
+                        openCloud(p,p,page+1)
                     }
                 }
             }

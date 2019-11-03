@@ -32,9 +32,49 @@ class Man10ItemCloud : JavaPlugin() {
         if (sender !is Player){
             return false
         }
+        if (!sender.hasPermission("cloud.use")){ return false }
 
-        if (args!= null && args.isEmpty()){
+        if (args== null || args.isEmpty()){
             inv.openMenu(sender)
+            return true
+        }
+
+        //クラウドを開く
+        if (args[0] == "open"){
+            inv.openCloud(sender,sender,1)
+            return true
+        }
+
+        if (!sender.hasPermission("cloud.op"))return false
+
+        if (args[0] == "create" && args.size == 3){
+            db.createNewData(Bukkit.getPlayer(args[1]),args[2])
+            sender.sendMessage("$prefix§a§l作成完了")
+            return true
+        }
+
+        if (args[0] == "delete" && args.size == 2){
+            db.deleteData(Bukkit.getPlayer(args[1]))
+            sender.sendMessage("$prefix§a§l削除完了")
+            return true
+        }
+
+        if (args[0] == "open" && args.size == 2){
+            inv.openCloud(Bukkit.getPlayer(args[1]),sender,1)
+            return true
+        }
+
+        if (args[0] == "help"){
+            sender.sendMessage("§b§lMan10ItemCloud HELP")
+            sender.sendMessage("§b§l=====================")
+            sender.sendMessage("§a§l/mcloud クラウドのメニューを開きます")
+            sender.sendMessage("§a§l/mcloud open クラウドを開きます")
+            sender.sendMessage("§a§l/mcloud create [player] [plan] 指定プレイヤーのクラウドを作成します" +
+                    "plan: beginner,expert,premium ")
+            sender.sendMessage("§a§l/mcloud delete [player] 指定プレイヤーのクラウドを削除します")
+            sender.sendMessage("§a§l/mcloud open [player] 指定プレイヤーのクラウドを開きます")
+            sender.sendMessage("§b§l=====================")
+
             return true
         }
 
