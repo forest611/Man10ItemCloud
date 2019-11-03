@@ -9,14 +9,9 @@ import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import kotlin.math.pow
 
 class CloudInventory(val pl:Man10ItemCloud):Listener{
-
-
-    val small = 1
-    val normal = 5
-    val big = 10
-
 
 
     //////////////////////
@@ -25,12 +20,10 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
     fun openMenu(player: Player){
         val inv = Bukkit.createInventory(null , 27,pl.prefix+"§d§lMenu")
 
-        inv.setItem(11,QIC(Material.CHEST,"§f§lOpen mCloud",0, mutableListOf("mCloudを開きます","現在のプランは${pl.db.getMember(player)}です")))
+        inv.setItem(11,QIC(Material.CHEST,"§f§lOpen mCloud",0, mutableListOf("mCloudを開きます","現在のプランは${pl.db.getTotal(player)}です")))
 
         inv.setItem(13,QIC(Material.PAPER,"§f§lUpgrade mCloud",0,
                 mutableListOf("mCloudをアップグレードします")))
-//        inv.setItem(15,QIC(Material.BARRIER,"§f§lDelete mCloud",0,
-//                mutableListOf("mCloudを削除します","§4§lクラウドプランを変更する場合","§4§l以外では仕様非推奨です！")))
 
 
         player.openInventory(inv)
@@ -39,83 +32,62 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
     ///////////////////////////
     //指定ページのクラウドデータを開く
-    //user=クラウドユーザー
-    //p=開く人
     /////////////////////////////
-    fun openCloud(user: Player,p:Player, page:Int){
+    fun openCloud(p:Player, page:Int){
         val inv = Bukkit.createInventory(null,54,pl.prefix+"§b§lCloud")
 
-        Bukkit.getScheduler().runTask(pl){
+        val total = pl.db.getTotal(p)
 
-            val member = pl.db.getMember(user)
+        if (total == -1){
+            p.sendMessage(pl.prefix+"§e§l現在新規データを作成しています")
+            pl.db.createGuestData(p)
+            p.sendMessage(pl.prefix+"§e§l作成完了！")
+            p.sendMessage(pl.prefix+"§e§lもう一度開いてください！")
+            return
+        }
 
-            if (member == "none"){
-                user.sendMessage(pl.prefix+"§e§l現在新規データを作成しています")
-                pl.db.createGuestData(user)
-                user.sendMessage(pl.prefix+"§e§l作成完了！")
-                user.sendMessage(pl.prefix+"§e§lもう一度開いてください！")
-                return@runTask
-            }
+        val map = pl.db.loadItemData(p,page)
 
-            val map = pl.db.loadItemData(user,page)
-
-            if (member == "guest"){
-                val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
-
-                for (item in map){
-                    if (item.type == Material.AIR)continue
-
-                    invGuest.addItem(item)
-                }
-                invGuest.setItem(8,QIC(Material.PAPER,"§e§l有料版にアップグレードする",0,
-                        mutableListOf("ここをクリックして有料版に","アップグレードしましょう！")))
-                p.openInventory(invGuest)
-                return@runTask
-            }
+        if (total == 0){
+            val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
 
             for (item in map){
-
                 if (item.type == Material.AIR)continue
 
-                inv.addItem(item)
+                invGuest.addItem(item)
             }
-
-            for (i in 45..53){
-                inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"",15, mutableListOf()))
-            }
-
-            inv.setItem(49,QIC(Material.STAINED_GLASS_PANE,"",page, mutableListOf()))
-
-            if (page != 1){
-                inv.setItem(45,QIC(Material.PAPER,"§6§l前のページへ",0, mutableListOf("前のページへ戻ります")))
-            }
-
-            ///////
-            //next page
-            when(member){
-                "beginner" ->{
-                    if (page != small){
-                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
-                    }
-
-                }
-                "expert" ->{
-                    if (page != normal){
-                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
-                    }
-
-                }
-                "premium" ->{
-                    if (page != big){
-                        inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
-                    }
-                }
-            }
-
-            user.sendMessage(pl.prefix+"§e§lアイテムを持ったままページを切り替え内容に注意してください！" +
-                    "アイテムを落としてしまいます！")
-            p.openInventory(inv)
+            invGuest.setItem(8,QIC(Material.PAPER,"§e§l有料版にアップグレードする",0,
+                    mutableListOf("ここをクリックして有料版に","アップグレードしましょう！")))
+            p.openInventory(invGuest)
+            return
         }
+
+        for (item in map){
+
+            if (item.type == Material.AIR)continue
+
+            inv.addItem(item)
+        }
+
+        for (i in 45..53){
+            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"",15, mutableListOf()))
+        }
+
+        inv.setItem(49,QIC(Material.STAINED_GLASS_PANE,"",page, mutableListOf()))
+
+        if (page != 1){
+            inv.setItem(45,QIC(Material.PAPER,"§6§l前のページへ",0, mutableListOf("前のページへ戻ります")))
+        }
+
+        ///////
+        //next page
+        if (page < total){
+            inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+        }
+
+        p.sendMessage(pl.prefix+"§e§lアイテムを持ったままページを切り替え内容に注意してください！" +
+                "アイテムを落としてしまいます！")
+        p.openInventory(inv)
     }
 
 
@@ -125,74 +97,22 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
     ////////////////////////
     fun upgradeCloud(player: Player){
 
-        val type = pl.db.getMember(player)
+        val page = pl.db.getTotal(player)
 
-        val inv = Bukkit.createInventory(null,27,"${pl.prefix}§e§lクラウドタイプを選択")
-
-        when(type){
-
-            "none" ->{
-                inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48,
-                        mutableListOf("§e§l${small}ラージチェスト","エンダーチェストでは物足りない方におすすめです","§e§l￥500,000,000")))
-                inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0,
-                        mutableListOf("§e§l${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです","§e§l￥2,500,000,000")))
-                inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0,
-                        mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです","§e§l￥5,000,000,000")))
-
-            }
-            "guest" ->{
-                inv.setItem(11,QIC(Material.DIAMOND_HOE,"§a§lBeginner",48,
-                        mutableListOf("§e§l${small}ラージチェスト","エンダーチェストでは物足りない方におすすめです","§e§l￥500,000,000")))
-                inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0,
-                        mutableListOf("§e§l${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです","§e§l￥2,500,000,000")))
-                inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0,
-                        mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです","§e§l￥5,000,000,000")))
-
-            }
-            "beginner" ->{
-                inv.setItem(13,QIC(Material.SILVER_SHULKER_BOX,"§5§lExpert",0,
-                        mutableListOf("§e§l${normal}ラージチェスト","家の収納をmCloudで済ませたい方におすすめです","§e§l￥2,000,000,000")))
-                inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0,
-                        mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです","§e§l￥4,500,000,000")))
-
-            }
-            "expert" ->{
-                inv.setItem(15,QIC(Material.CHEST,"§e§lPremium",0,
-                        mutableListOf("§e§l${big}ラージチェスト","膨大なアイテムを持っている方におすすめです","§e§l￥2,500,000,000")))
-
-            }
-            "premium" ->{
-                player.sendMessage("§e§lあなたは既に最高ランクのプランをご利用です！")
-                player.closeInventory()
-                return
-            }
+        if (page >= 16){
+            player.sendMessage("${pl.prefix}§a§lこれ以上ページを追加できません")
+            return
         }
+
+        val inv = Bukkit.createInventory(null,9,"${pl.prefix}§e§lクラウドをアップグレード")
+
+        val amount =(2.0.pow(page.toDouble()))*50000000
+
+        inv.setItem(4,QIC(Material.CHEST,"§a§lアップグレード",0, mutableListOf("§e§lインベントリを1ページ増やします","§e§l$amount$")))
 
         player.openInventory(inv)
     }
 
-//    /////////////////////
-//    //削除確認
-//    ///////////////////////
-//    fun deleteCheck(player: Player){
-//
-//        if (pl.db.getMember(player) == "none"){
-//            player.closeInventory()
-//            player.sendMessage("${pl.prefix}§e§lあなたはmCloudの登録をしていません！")
-//            return
-//        }
-//
-//
-//        val inv = Bukkit.createInventory(null,9,"${pl.prefix}§4§lmCloud登録削除")
-//
-//        for (i in 0..3){
-//            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§a§l削除する",5, mutableListOf()))
-//        }
-//        for (i in 5..8){
-//            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"§4§l削除しない",14, mutableListOf()))
-//        }
-//        player.openInventory(inv)
-//    }
 
     @EventHandler
     fun clickEvent(e:InventoryClickEvent){
@@ -206,13 +126,10 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
             when(e.slot){
                 11 ->{
-                    openCloud(p,p,1)
+                    openCloud(p,1)
                 }
                 13 ->{
                     upgradeCloud(p)
-                }
-                15 ->{
-                   // deleteCheck(p)
                 }
             }
 
@@ -227,9 +144,10 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         val page = e.inventory.getItem(49).durability.toInt()
 
-                        Thread(Runnable {pl.db.saveItemData(e.inventory,page,p)}).start()
-
-                        openCloud(p,p,page-1)
+                        Bukkit.getScheduler().runTask(pl){
+                            pl.db.saveItemData(e.inventory,page,p)
+                            openCloud(p,page-1)
+                        }
                     }
                 }
                 53 ->{
@@ -237,9 +155,10 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         val page =e.inventory.getItem(49).durability.toInt()
 
-                        Thread(Runnable {pl.db.saveItemData(e.inventory,page,p)}).start()
-
-                        openCloud(p,p,page+1)
+                        Bukkit.getScheduler().runTask(pl){
+                            pl.db.saveItemData(e.inventory,page,p)
+                            openCloud(p,page+1)
+                        }
                     }
                 }
             }
@@ -253,125 +172,25 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
             }
         }
 
-        if(data == "§e§lクラウドタイプを選択"){
+        if(data == "§e§lクラウドをアップグレード"){
             e.isCancelled =true
 
-            val type = pl.db.getMember(p)
+            val total = pl.db.getTotal(p)
 
-            when(e.slot){
-
-                //buy beginner
-                11 ->{
-
-                    if (type != "guest" && type != "none"){
-                        return
-                    }
-
-                    //500,000,000
-
-
-                    if (!withdraw(p,500000000.0)){
-                        return
-                    }
-                    Bukkit.getLogger().info("withdraw mCloud")
-
-                    p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
-                    Thread(Runnable {
-                        pl.db.createNewData(p,"beginner")
-                        p.sendMessage(pl.prefix+"§e§l作成完了！")
-                    }).start()
-                    p.closeInventory()
+            if (e.slot == 4){
+                if (!withdraw(p,((2.0.pow(total.toDouble()))*50000000))){
+                    return
                 }
-
-                //buy expert
-                13->{
-                    if (type == "expert"){
-                        return
-                    }
-
-                    //2,500,000,000
-                    when(type){
-                        "none" ->{
-                            if (!withdraw(p,2500000000.0)){
-                                return
-                            }
-                        }
-                        "guest" ->{
-                            if (!withdraw(p,2500000000.0)){
-                                return
-                            }
-                        }
-                        "beginner" ->{
-                            if (!withdraw(p,2000000000.0)){
-                                return
-                            }
-                        }
-                    }
-
-
-                    p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
-                    Thread(Runnable {
-                        pl.db.createNewData(p,"expert")
-                        p.sendMessage(pl.prefix+"§e§l作成完了！")
-                    }).start()
-                    p.closeInventory()
-                }
-
-                //buy premium
-                15->{
-
-                    //5,000,000,000
-
-                    when(type){
-                        "none" ->{
-                            if (!withdraw(p,5000000000.0)){
-                                return
-                            }
-                        }
-                        "guest" ->{
-                            if (!withdraw(p,5000000000.0)){
-                                return
-                            }
-                        }
-                        "beginner" ->{
-                            if (!withdraw(p,4500000000.0)){
-                                return
-                            }
-                        }
-                        "expert" ->{
-                            if (!withdraw(p,2500000000.0)){
-                                return
-                            }
-                        }
-                    }
-                    Bukkit.getLogger().info("withdraw mCloud")
-
-                    p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
-                    Thread(Runnable {
-                        pl.db.createNewData(p,"premium")
-                        p.sendMessage(pl.prefix+"§e§l作成完了！")
-                    }).start()
-                    p.closeInventory()
-                }
-            }
-
-        }
-
-        if (data == "§4§lmCloud登録削除"){
-            e.isCancelled = true
-
-            if (e.slot <=3){
-                p.closeInventory()
-                p.sendMessage(pl.prefix+"§e§l削除中...")
+                p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
                 Thread(Runnable {
-                    pl.db.deleteData(p)
-                    p.sendMessage(pl.prefix+"§e§l削除完了！")
+                    pl.db.insertData(p,total+1)
+                    p.sendMessage(pl.prefix+"§e§l作成完了！")
                 }).start()
-            }
-            if (e.slot >=5){
                 p.closeInventory()
             }
+
         }
+
     }
 
     fun withdraw(player: Player,money:Double):Boolean{

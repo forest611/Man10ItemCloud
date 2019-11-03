@@ -51,11 +51,12 @@ public class MySQLManagerV2 {
                 + "\t`base64` TEXT NULL DEFAULT NULL,\n"
                 + "\t`page` INT NULL DEFAULT NULL," +
                 "PRIMARY KEY (`key`));");
+        execute("ALTER TABLE item_data ADD INDEX uuid(uuid);");
 
-        execute("CREATE TABLE if not exists `member_list`(\n"
+        execute("CREATE TABLE if not exists `total_page_list`(\n"
                 + "\t`player` VARCHAR(20) NULL DEFAULT NULL,\n"
                 + "\t`uuid` VARCHAR(50) NULL DEFAULT NULL,\n"
-                + "\t`type` VARCHAR(20) NULL DEFAULT NULL,\n"
+                + "\t`page_total` INT NULL DEFAULT NULL,\n"
                 + "\t`join_date` DATE NULL DEFAULT NULL);");
     }
 

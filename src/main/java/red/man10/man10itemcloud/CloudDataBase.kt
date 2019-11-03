@@ -14,13 +14,13 @@ import java.util.concurrent.ConcurrentHashMap
 
 class CloudDataBase(val pl:Man10ItemCloud){
 
-    val members = ConcurrentHashMap<Player,String>()
+    val total_pages = ConcurrentHashMap<Player,Int>()
 
-    fun getMember(player: Player):String{
-        var m = members[player]
+    fun getTotal(player: Player):Int{
+        var m = total_pages[player]
         if(m == null){
-            m = getMemberType(player)
-            members[player] = m
+            m = getTotalPage(player)
+            total_pages[player] = m
         }
         return m
     }
@@ -28,7 +28,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
     fun saveItemData(inv : Inventory,page:Int,player:Player){
 
         val items = mutableListOf<ItemStack>()
-        if (getMember(player) == "guest"){
+        if (getTotal(player) == 0){
             for (i in 0..7){
                 if(inv.getItem(i) == null){
                     items.add(ItemStack(Material.AIR))
@@ -76,35 +76,6 @@ class CloudDataBase(val pl:Man10ItemCloud){
         return map
     }
 
-
-    ////////////////////////////////
-    //新規プレイヤー
-    ////////////////////////////////
-    fun createNewData(player:Player,member:String){
-
-        when(member){
-            "beginner" ->{
-                for (i in 1..pl.inv.small){
-                    insertData(player,i)
-                }
-            }
-            "expert" -> {
-                for (i in 1..pl.inv.normal){
-                    insertData(player,i)
-                }
-            }
-            "premium" ->{
-                for (i in 1..pl.inv.big){
-                    insertData(player,i)
-                }
-            }
-        }
-
-        setMemberType(player, member)
-
-    }
-
-
     ////////////////////////////
     //指定ページのデータを新規作成
     ////////////////////////////
@@ -118,8 +89,6 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
         val mysql = MySQLManagerV2(pl,"mcloud")
 
-//        mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
-//                " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page');")
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 "SELECT * FROM (SELECT '${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page')" +
                 " AS TMP WHERE NOT EXISTS (SELECT * FROM `item_data` WHERE uuid='${player.uniqueId}' and page='$page');")
@@ -136,7 +105,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '1');")
-        setMemberType(player, "guest")
+        setTotalPage(player,0)
     }
 
 
@@ -149,11 +118,9 @@ class CloudDataBase(val pl:Man10ItemCloud){
 
 
     /////////////////////////////
-    //beginner
-    //expert
-    //premium
+    //ページ数をチェック
     /////////////////////////////
-    fun getMemberType(player: Player):String{
+    fun getTotalPage(player: Player):Int{
         val mysql = MySQLManagerV2(pl,"mcloud")
 
         val q = mysql.query("SELECT * FROM member_list WHERE uuid='${player.uniqueId}';")
@@ -164,27 +131,27 @@ class CloudDataBase(val pl:Man10ItemCloud){
             rs.close()
             q.close()
 
-            return "none"
+            return -1
         }
 
-        val type = rs.getString("type")
+        val page = rs.getInt("page_total")
 
         rs.close()
         q.close()
-        return type
+        return page
     }
 
-    fun setMemberType(player:Player,member: String){
+    fun setTotalPage(player:Player,page:Int){
         val mysql = MySQLManagerV2(pl,"mcloud")
 
-        if (getMember(player) != "none"){
-            mysql.execute("UPDATE `member_list` SET type='$member',join_date=now() WHERE uuid='${player.uniqueId}';")
-            members[player] = member
+        if (getTotal(player) != -1){
+            mysql.execute("UPDATE `member_list` SET page_total='$page',join_date=now() WHERE uuid='${player.uniqueId}';")
+            total_pages[player] = page
             return
         }
         mysql.execute("INSERT INTO `member_list` (`player`, `uuid`, `type`, `join_date`)" +
-                " VALUES ('${player.name}', '${player.uniqueId}', '$member', now());")
-        members[player] = member
+                " VALUES ('${player.name}', '${player.uniqueId}', '$page', now());")
+        total_pages[player] = page
     }
 
 
