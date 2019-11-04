@@ -32,15 +32,17 @@ class Man10ItemCloud : JavaPlugin() {
         if (sender !is Player){
             return false
         }
-        if (!sender.hasPermission("cloud.use")){ return false }
-
         if (args== null || args.isEmpty()){
+            if (!sender.hasPermission("cloud.menu")){ return false }
+
             inv.openMenu(sender)
             return true
         }
 
         //クラウドを開く
         if (args[0] == "open" && args.size == 1){
+            if (!sender.hasPermission("cloud.open")){ return false }
+
             Bukkit.getScheduler().runTask(this){
                 inv.openCloud(sender,1)
             }
