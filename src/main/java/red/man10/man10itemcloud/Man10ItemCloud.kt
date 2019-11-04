@@ -40,7 +40,7 @@ class Man10ItemCloud : JavaPlugin() {
         }
 
         //クラウドを開く
-        if (args[0] == "open"){
+        if (args[0] == "open" && args.size == 1){
             Bukkit.getScheduler().runTask(this){
                 inv.openCloud(sender,1)
             }
@@ -75,7 +75,7 @@ class Man10ItemCloud : JavaPlugin() {
         }
 
         if (args[0] == "open" && args.size == 2){
-            inv.openCloud(Bukkit.getPlayer(args[1]),1)
+            inv.openOtherCloud(Bukkit.getPlayer(args[1]),sender,1)
             return true
         }
 

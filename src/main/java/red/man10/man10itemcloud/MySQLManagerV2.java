@@ -51,8 +51,6 @@ public class MySQLManagerV2 {
                 + "\t`base64` TEXT NULL DEFAULT NULL,\n"
                 + "\t`page` INT NULL DEFAULT NULL," +
                 "PRIMARY KEY (`key`));");
-        execute("ALTER TABLE item_data ADD INDEX uuid(uuid);");
-
         execute("CREATE TABLE if not exists `total_page_list`(\n"
                 + "\t`player` VARCHAR(20) NULL DEFAULT NULL,\n"
                 + "\t`uuid` VARCHAR(50) NULL DEFAULT NULL,\n"

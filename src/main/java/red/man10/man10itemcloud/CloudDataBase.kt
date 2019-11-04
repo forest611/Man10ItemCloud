@@ -19,6 +19,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
     fun getTotal(player: Player):Int{
         var m = total_pages[player]
         if(m == null){
+
             m = getTotalPage(player)
             total_pages[player] = m
         }
@@ -92,6 +93,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 "SELECT * FROM (SELECT '${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page')" +
                 " AS TMP WHERE NOT EXISTS (SELECT * FROM `item_data` WHERE uuid='${player.uniqueId}' and page='$page');")
+
     }
 
     fun createGuestData(player: Player){
@@ -113,7 +115,8 @@ class CloudDataBase(val pl:Man10ItemCloud){
         val mysql = MySQLManagerV2(pl,"mcloud")
 
         mysql.execute("DELETE FROM `item_data` WHERE `uuid`='${player.uniqueId}';")
-        mysql.execute("DELETE FROM `member_list` WHERE `uuid`='${player.uniqueId}';")
+        mysql.execute("DELETE FROM `total_page_list` WHERE `uuid`='${player.uniqueId}';")
+        total_pages[player] = -1
     }
 
 
@@ -123,7 +126,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
     fun getTotalPage(player: Player):Int{
         val mysql = MySQLManagerV2(pl,"mcloud")
 
-        val q = mysql.query("SELECT * FROM member_list WHERE uuid='${player.uniqueId}';")
+        val q = mysql.query("SELECT * FROM total_page_list WHERE uuid='${player.uniqueId}';")
 
         val rs = q.rs
 
@@ -145,11 +148,11 @@ class CloudDataBase(val pl:Man10ItemCloud){
         val mysql = MySQLManagerV2(pl,"mcloud")
 
         if (getTotal(player) != -1){
-            mysql.execute("UPDATE `member_list` SET page_total='$page',join_date=now() WHERE uuid='${player.uniqueId}';")
+            mysql.execute("UPDATE `total_page_list` SET page_total='$page',join_date=now() WHERE uuid='${player.uniqueId}';")
             total_pages[player] = page
             return
         }
-        mysql.execute("INSERT INTO `member_list` (`player`, `uuid`, `type`, `join_date`)" +
+        mysql.execute("INSERT INTO `total_page_list` (`player`, `uuid`, `page_total`, `join_date`)" +
                 " VALUES ('${player.name}', '${player.uniqueId}', '$page', now());")
         total_pages[player] = page
     }

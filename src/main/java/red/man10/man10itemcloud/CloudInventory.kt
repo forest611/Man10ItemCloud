@@ -7,8 +7,11 @@ import org.bukkit.event.EventHandler
 import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
+import org.bukkit.event.player.PlayerJoinEvent
+import org.bukkit.inventory.Inventory
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
+import java.text.NumberFormat
 import kotlin.math.pow
 
 class CloudInventory(val pl:Man10ItemCloud):Listener{
@@ -20,7 +23,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
     fun openMenu(player: Player){
         val inv = Bukkit.createInventory(null , 27,pl.prefix+"§d§lMenu")
 
-        inv.setItem(11,QIC(Material.CHEST,"§f§lOpen mCloud",0, mutableListOf("mCloudを開きます","現在のプランは${pl.db.getTotal(player)}です")))
+        inv.setItem(11,QIC(Material.CHEST,"§f§lOpen mCloud",0, mutableListOf("mCloudを開きます")))
 
         inv.setItem(13,QIC(Material.PAPER,"§f§lUpgrade mCloud",0,
                 mutableListOf("mCloudをアップグレードします")))
@@ -85,19 +88,70 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
             inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
         }
 
-        p.sendMessage(pl.prefix+"§e§lアイテムを持ったままページを切り替え内容に注意してください！" +
-                "アイテムを落としてしまいます！")
         p.openInventory(inv)
     }
 
+    fun openOtherCloud(owner:Player,p:Player, page:Int){
+        val inv = Bukkit.createInventory(null,54,pl.prefix+"§b§lCloud(Other)")
 
+        val total = pl.db.getTotal(owner)
+
+        if (total == -1){
+            p.sendMessage("${pl.prefix}§e§l${owner.name}はクラウドを持っていません")
+            return
+        }
+
+        val map = pl.db.loadItemData(owner,page)
+
+//        if (total == 0){
+//            val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
+//
+//            for (item in map){
+//                if (item.type == Material.AIR)continue
+//
+//                invGuest.addItem(item)
+//            }
+//            invGuest.setItem(8,QIC(Material.PAPER,"§e§l有料版にアップグレードする",0,
+//                    mutableListOf("ここをクリックして有料版に","アップグレードしましょう！")))
+//            owner.openInventory(invGuest)
+//            return
+//        }
+
+        for (item in map){
+
+            if (item.type == Material.AIR)continue
+
+            inv.addItem(item)
+        }
+
+        for (i in 45..53){
+            inv.setItem(i,QIC(Material.STAINED_GLASS_PANE,"",15, mutableListOf()))
+        }
+
+        inv.setItem(49,QIC(Material.STAINED_GLASS_PANE,owner.name,page, mutableListOf()))
+
+        if (page > 1){
+            inv.setItem(45,QIC(Material.PAPER,"§6§l前のページへ",0, mutableListOf("前のページへ戻ります")))
+        }
+
+        ///////
+        //next page
+        if (page < total){
+            inv.setItem(53,QIC(Material.PAPER,"§6§l次のページへ",0, mutableListOf("次のページに進みます")))
+        }
+
+        p.openInventory(inv)
+
+    }
 
     /////////////////////////
     //アップグレード
     ////////////////////////
     fun upgradeCloud(player: Player){
 
-        val page = pl.db.getTotal(player)
+        var page = pl.db.getTotal(player)
+
+        if (page == -1)page=0
 
         if (page >= 16){
             player.sendMessage("${pl.prefix}§a§lこれ以上ページを追加できません")
@@ -106,7 +160,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
         val inv = Bukkit.createInventory(null,9,"${pl.prefix}§e§lクラウドをアップグレード")
 
-        val amount =(2.0.pow(page.toDouble()))*50000000
+        val amount = NumberFormat.getNumberInstance().format((2.0.pow(page.toDouble()))*1000000000)
 
         inv.setItem(4,QIC(Material.CHEST,"§a§lアップグレード",0, mutableListOf("§e§lインベントリを1ページ増やします","§e§l$amount$")))
 
@@ -166,6 +220,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         }
 
         if (data == "§b§lCloud§e§l(DEMO)"){
+
             if (e.slot == 8){
                 e.isCancelled = true
                 upgradeCloud(p)
@@ -178,15 +233,51 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
             val total = pl.db.getTotal(p)
 
             if (e.slot == 4){
-                if (!withdraw(p,((2.0.pow(total.toDouble()))*50000000))){
+                if (!withdraw(p,(2.0.pow(total.toDouble()))*1000000000)){
                     return
                 }
                 p.sendMessage(pl.prefix+"§e§l新規データを作成中...")
                 Thread(Runnable {
-                    pl.db.insertData(p,total+1)
+                    if (total == -1){
+                        pl.db.insertData(p,1)
+                        pl.db.setTotalPage(p,1)
+                    }else{
+                        pl.db.insertData(p,total+1)
+                        pl.db.setTotalPage(p,total+1)
+                    }
                     p.sendMessage(pl.prefix+"§e§l作成完了！")
                 }).start()
                 p.closeInventory()
+            }
+
+        }
+
+        if (data == "§b§lCloud(Other)"){
+            if (e.slot >=45)e.isCancelled =true
+
+            val owner = e.inventory.getItem(49).itemMeta.displayName
+
+            when(e.slot){
+                45 ->{
+                    if (e.currentItem.itemMeta.displayName == "§6§l前のページへ"){
+
+                        val page = e.inventory.getItem(49).durability.toInt()
+
+                        Bukkit.getScheduler().runTask(pl){
+                            openOtherCloud(p,Bukkit.getPlayer(owner),page-1)
+                        }
+                    }
+                }
+                53 ->{
+                    if (e.currentItem.itemMeta.displayName == "§6§l次のページへ"){
+
+                        val page =e.inventory.getItem(49).durability.toInt()
+
+                        Bukkit.getScheduler().runTask(pl){
+                            openOtherCloud(p,Bukkit.getPlayer(owner),page+1)
+                        }
+                    }
+                }
             }
 
         }
@@ -213,6 +304,13 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
         if (e.inventory.title == pl.prefix+"§b§lCloud§e§l(DEMO)"){
             pl.db.saveItemData(e.inventory,1,e.player as Player)
         }
+    }
+
+    @EventHandler
+    fun loginEvent(e:PlayerJoinEvent){
+        Thread(Runnable {
+            pl.db.getTotal(e.player)
+        }).start()
     }
 
     ////////////////////////
