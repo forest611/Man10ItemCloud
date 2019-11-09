@@ -14,6 +14,7 @@ class Man10ItemCloud : JavaPlugin() {
     var vault : VaultManager? = null
     val db = CloudDataBase(this)
     val inv = CloudInventory(this)
+    var start = true
     override fun onEnable() {
         // Plugin startup logic
         saveDefaultConfig()
@@ -35,13 +36,38 @@ class Man10ItemCloud : JavaPlugin() {
         if (args== null || args.isEmpty()){
             if (!sender.hasPermission("cloud.menu")){ return false }
 
+            if (!start){
+                sender.sendMessage("§b現在、mCloudサーバーが攻撃によってダウンしています")
+                return true
+            }
+
             inv.openMenu(sender)
             return true
         }
 
+
+        if (args[0] == "off"){
+            start = false
+            sender.sendMessage("§bプラグインを使用不可能にしました")
+            return true
+        }
+
+        if (args[0] == "on"){
+            start = true
+            sender.sendMessage("§bプラグインを使用可能にしました")
+            return true
+        }
+
+
         //クラウドを開く
         if (args[0] == "open" && args.size == 1){
             if (!sender.hasPermission("cloud.open")){ return false }
+
+            if (!start){
+                sender.sendMessage("§b現在、mCloudサーバーが攻撃によってダウンしています")
+                return true
+            }
+
 
             Bukkit.getScheduler().runTask(this){
                 inv.openCloud(sender,1)

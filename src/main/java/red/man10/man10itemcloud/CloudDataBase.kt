@@ -106,6 +106,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 "SELECT * FROM (SELECT '${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page')" +
                 " AS TMP WHERE NOT EXISTS (SELECT * FROM `item_data` WHERE uuid='${player.uniqueId}' and page='$page');")
+        getItemData(player, page)
 
     }
 
@@ -130,6 +131,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
         mysql.execute("DELETE FROM `item_data` WHERE `uuid`='${player.uniqueId}';")
         mysql.execute("DELETE FROM `total_page_list` WHERE `uuid`='${player.uniqueId}';")
         total_pages[player] = -1
+        player_item_data.remove(player)
     }
 
 
