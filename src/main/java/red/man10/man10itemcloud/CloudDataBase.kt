@@ -15,6 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
 class CloudDataBase(val pl:Man10ItemCloud){
 
     val total_pages = ConcurrentHashMap<Player,Int>()
+    val player_item_data = ConcurrentHashMap<Player,HashMap<Int,MutableList<ItemStack>>>()
 
     fun getTotal(player: Player):Int{
         var m = total_pages[player]
@@ -48,10 +49,13 @@ class CloudDataBase(val pl:Man10ItemCloud){
             }
         }
 
-        val mysql = MySQLManagerV2(pl,"mcloud")
+        player_item_data[player]!![page] = items
+
+        val mysql = MySQLManagerV2(pl,"mcloud_saving")
 
         mysql.execute("UPDATE `item_data` SET `base64`='${itemStackArrayToBase64(items.toTypedArray())}'" +
                 " WHERE `page`=$page and uuid='${player.uniqueId}';")
+
 
     }
 
@@ -59,22 +63,31 @@ class CloudDataBase(val pl:Man10ItemCloud){
     /**
      * @return inventory data mutableList(ItemStack)
      */
-    fun loadItemData(player: Player,page : Int):MutableList<ItemStack>{
+    fun getItemData(player: Player, page : Int):MutableList<ItemStack>{
 
-        val mysql = MySQLManagerV2(pl,"mcloud")
+        if (player_item_data[player] == null){
+            player_item_data[player] = HashMap()
+        }
 
-        val q = mysql.query("SELECT * FROM item_data WHERE uuid='${player.uniqueId}' and page='$page';")
+        var pageData = player_item_data[player]!![page]
 
-        val rs = q.rs
+        if (pageData == null){
+            val mysql = MySQLManagerV2(pl,"mcloud_getting")
 
-        rs.next()
+            val q = mysql.query("SELECT * FROM item_data WHERE uuid='${player.uniqueId}' and page='$page';")
 
-        val map = itemStackArrayFromBase64(rs.getString("base64"))
+            val rs = q.rs
 
-        rs.close()
-        q.close()
+            rs.next()
 
-        return map
+            pageData = itemStackArrayFromBase64(rs.getString("base64"))
+            player_item_data[player]!![page] = pageData
+            rs.close()
+            q.close()
+
+        }
+
+        return pageData
     }
 
     ////////////////////////////
@@ -88,7 +101,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
             items.add(ItemStack(Material.AIR))
         }
 
-        val mysql = MySQLManagerV2(pl,"mcloud")
+        val mysql = MySQLManagerV2(pl,"mcloud_insert")
 
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 "SELECT * FROM (SELECT '${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '$page')" +
@@ -103,7 +116,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
             items.add(ItemStack(Material.AIR))
         }
 
-        val mysql = MySQLManagerV2(pl,"mcloud")
+        val mysql = MySQLManagerV2(pl,"mcloud_create")
 
         mysql.execute("INSERT INTO `item_data` (`player`, `uuid`, `base64`, `page`)" +
                 " VALUES ('${player.name}', '${player.uniqueId}', '${itemStackArrayToBase64(items.toTypedArray())}', '1');")
@@ -124,7 +137,7 @@ class CloudDataBase(val pl:Man10ItemCloud){
     //ページ数をチェック
     /////////////////////////////
     fun getTotalPage(player: Player):Int{
-        val mysql = MySQLManagerV2(pl,"mcloud")
+        val mysql = MySQLManagerV2(pl,"mcloud_getpage")
 
         val q = mysql.query("SELECT * FROM total_page_list WHERE uuid='${player.uniqueId}';")
 

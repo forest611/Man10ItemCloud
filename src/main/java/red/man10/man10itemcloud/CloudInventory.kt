@@ -8,7 +8,7 @@ import org.bukkit.event.Listener
 import org.bukkit.event.inventory.InventoryClickEvent
 import org.bukkit.event.inventory.InventoryCloseEvent
 import org.bukkit.event.player.PlayerJoinEvent
-import org.bukkit.inventory.Inventory
+import org.bukkit.event.player.PlayerQuitEvent
 import org.bukkit.inventory.ItemFlag
 import org.bukkit.inventory.ItemStack
 import java.text.NumberFormat
@@ -43,13 +43,15 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
         if (total == -1){
             p.sendMessage(pl.prefix+"§e§l現在新規データを作成しています")
-            pl.db.createGuestData(p)
+            Thread(Runnable {
+                pl.db.createGuestData(p)
+            }).start()
             p.sendMessage(pl.prefix+"§e§l作成完了！")
             p.sendMessage(pl.prefix+"§e§lもう一度開いてください！")
             return
         }
 
-        val map = pl.db.loadItemData(p,page)
+        val map = pl.db.getItemData(p,page)
 
         if (total == 0){
             val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
@@ -101,7 +103,7 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
             return
         }
 
-        val map = pl.db.loadItemData(owner,page)
+        val map = pl.db.getItemData(owner,page)
 
 //        if (total == 0){
 //            val invGuest = Bukkit.createInventory(null,9,pl.prefix+"§b§lCloud§e§l(DEMO)")
@@ -200,8 +202,9 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         Bukkit.getScheduler().runTask(pl){
                             pl.db.saveItemData(e.inventory,page,p)
-                            openCloud(p,page-1)
                         }
+                        openCloud(p,page-1)
+
                     }
                 }
                 53 ->{
@@ -211,8 +214,9 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
 
                         Bukkit.getScheduler().runTask(pl){
                             pl.db.saveItemData(e.inventory,page,p)
-                            openCloud(p,page+1)
                         }
+                        openCloud(p,page+1)
+
                     }
                 }
             }
@@ -309,8 +313,17 @@ class CloudInventory(val pl:Man10ItemCloud):Listener{
     @EventHandler
     fun loginEvent(e:PlayerJoinEvent){
         Thread(Runnable {
-            pl.db.getTotal(e.player)
+            val p = e.player
+
+            for (page in 1..pl.db.getTotal(p)){
+                pl.db.getItemData(p,page)
+            }
         }).start()
+    }
+
+    @EventHandler
+    fun logout(e:PlayerQuitEvent){
+        pl.db.player_item_data.remove(e.player)
     }
 
     ////////////////////////
