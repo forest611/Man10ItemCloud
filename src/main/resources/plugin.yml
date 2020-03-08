@@ -1,0 +1,6 @@
+name: Man10ItemCloud
+version: 1.0
+softdepend:
+  - Man10CommonLibs
+main: red.man10.man10itemcloud.Man10ItemCloud
+api-version: 1.13
