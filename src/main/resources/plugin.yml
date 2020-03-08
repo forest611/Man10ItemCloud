@@ -4,3 +4,6 @@ softdepend:
   - Man10CommonLibs
 main: red.man10.man10itemcloud.Man10ItemCloud
 api-version: 1.13
+commands:
+  mcloud:
+    default: op
